@@ -23,6 +23,7 @@ fun View?.color(resourceId: Int) = this?.context.color(resourceId)
 fun Fragment.color(colorId: Int) = ContextCompat.getColor(activity as FragmentActivity, colorId)
 
 fun Context?.dip2px(dimen: Number) = UIUtil.dip2px(this, dimen.toFloat())
+
 fun View.lp(width: Int = ViewGroup.LayoutParams.MATCH_PARENT, height: Int = ViewGroup.LayoutParams.WRAP_CONTENT): View {
     if (layoutParams == null)
         layoutParams = ViewGroup.LayoutParams(width, height)
