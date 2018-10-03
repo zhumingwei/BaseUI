@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="CircleBondImageView">
+        <attr name="civ_border_width" format="dimension" />
+        <attr name="civ_border_color" format="color" />
+        <attr name="civ_border_overlay" format="boolean" />
+        <attr name="civ_fill_color" format="color" />
+        <attr name="civ_icon_color" format="color" />
+        <!--新增图片文字属性-->
+        <attr name="civ_img_text" format="string"/>
+        <attr name="civ_img_text_size" format="dimension"/>
+    </declare-styleable>
+
+
+    <declare-styleable name="BaseToolBar">
+        <attr name="base_title" format="string|reference"></attr>
+    </declare-styleable>
+
+</resources>

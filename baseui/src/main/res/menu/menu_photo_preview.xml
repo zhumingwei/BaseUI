@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_crop"
+        android:title="剪裁"
+        android:icon="@drawable/ic_crop_white_24dp"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/menu_crop_action"
+        android:title="使用"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menu_crop_submit"
+        android:title="确定"
+        app:showAsAction="always" />
+</menu>

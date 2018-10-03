@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="BaseTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+        <item name="actionBarSize">48dp</item>
+    </style>
+
+    <style name="BaseTheme.NoTitle">
+        <!--当windowIsTranslucent 设置为true时会造成分享返回显示上一页的bug-->
+        <!--现在没问题了-->
+        <!--<item name="android:windowIsTranslucent">true</item>-->
+        <item name="android:windowBackground">@color/witsWindowBg</item>
+        <!-- <item name="android:windowTranslucentNavigation">true</item>-->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeBackground">?colorPrimary</item>
+        <item name="actionBarStyle">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+    </style>
+
+    <style name="BaseTheme.NoTitle.TransStatusBar" >
+    </style>
+
+    <style name="BaseTheme.NoTitle.TransStatusBar.NoTranslucent">
+
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@color/witsWindowBg</item>
+        <item name="android:windowAnimationStyle">@style/iOSStyleActivityAnimation</item>
+    </style>
+
+    <!--Activity 转场动画-->
+    <style name="iOSStyleActivityAnimation" parent="@android:style/Animation.Activity">
+
+        <!-- 新Activity 进入 -->
+        <item name="android:activityOpenEnterAnimation">@anim/slide_from_right</item>
+        <!-- 旧Activity退出 -->
+        <item name="android:activityOpenExitAnimation">@anim/slide_to_left</item>
+        <!-- 新Activity退出 -->
+        <item name="android:activityCloseExitAnimation">@anim/slide_to_right</item>
+        <!-- 旧Activity进入 -->
+        <item name="android:activityCloseEnterAnimation">@anim/slide_from_left</item>
+    </style>
+</resources>

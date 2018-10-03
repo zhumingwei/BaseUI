@@ -35,10 +35,29 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    api 'com.android.support:appcompat-v7:27.1.1'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    api 'com.android.support:recyclerview-v7:27.1.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    api rootProject.ext.Retrofit2
+    api rootProject.ext.RetrofitRx
+    api rootProject.ext.Okhttp3
+    api rootProject.ext.Scalar
+
+    api rootProject.ext.Fastjson
+    //图片剪裁
+    api rootProject.ext.GestureView
+
+    api rootProject.ext.stetho.base
+    api rootProject.ext.stetho.okhttp
+    //七牛
+    compile 'com.qiniu:qiniu-android-sdk:7.3.+'
+    api rootProject.ext.Appcompat
+    api rootProject.ext.Design
+
+    kapt rootProject.ext.glideLib.apt
+    api (rootProject.ext.glideLib.glide) {
+        exclude group: "com.android.support"
+    }
+    api rootProject.ext.kotlinjdk
+    api 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.5@aar'
+
+    api rootProject.ext.rxAndroid
+
 }
