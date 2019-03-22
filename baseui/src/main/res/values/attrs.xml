@@ -20,6 +20,7 @@
     <declare-styleable name="CustomTabLayout">
         <attr name="tabTextAppearance" format="reference"></attr>
         <attr name="tabSelectedTextColor" format="color|reference"></attr>
+        <attr name="tabDisableTextColor" format="color|reference"></attr>
         <attr name="tabTextColor" format="color|reference"></attr>
         <attr name="mtabBackground" format="color|reference"></attr>
         <attr name="tabIndicatorColor" format="color|reference"></attr>

@@ -10,10 +10,10 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         app:mtabBackground="#ff0000"
+        app:mtabMode="fixed"
         app:tabIndicatorColor="#00ff00"
         app:tabIndicatorHeight="4dp"
         app:tabIndicatorWidth="40dp"
-        app:mtabMode="fixed"
         app:tabSelectedTextColor="#00ff00"
         app:tabTextAppearance="@style/BuyEpisode"
         app:tabTextColor="#0000ff">

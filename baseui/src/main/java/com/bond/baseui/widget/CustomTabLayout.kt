@@ -70,6 +70,10 @@ class CustomTabLayout @JvmOverloads constructor(
     var mode: Int = MODE_FIXED
     val disableSet: MutableSet<Int> = mutableSetOf()
     val scrollOffset = 52
+    //默认禁用颜色，xml文件可以改
+    val defaultDisableColor by lazy {
+        Color.parseColor("#C0C0C0")
+    }
 
     init {
         if (!isInEditMode) {
@@ -91,6 +95,7 @@ class CustomTabLayout @JvmOverloads constructor(
                 tabTextSize = taa.getDimensionPixelSize(android.support.v7.appcompat.R.styleable.TextAppearance_android_textSize, 0)
                 tabColorStateList = taa.getColorStateList(
                         android.support.v7.appcompat.R.styleable.TextAppearance_android_textColor)
+
             } catch (e: Exception) {
 
             } finally {
@@ -101,11 +106,24 @@ class CustomTabLayout @JvmOverloads constructor(
                     // If we have an explicit text color set, use it instead
                     tabColorStateList = ta.getColorStateList(R.styleable.CustomTabLayout_tabTextColor)
                 }
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabSelectedTextColor)) {
-                    val selected = ta.getColor(R.styleable.CustomTabLayout_tabSelectedTextColor, 0)
-                    tabColorStateList = createColorStateList(tabColorStateList?.getDefaultColor()
-                            ?: Color.BLACK, selected)
+
+                if (ta.hasValue(R.styleable.CustomTabLayout_tabSelectedTextColor) || ta.hasValue(R.styleable.CustomTabLayout_tabDisableTextColor)) {
+                    var selected = 0
+                    if (ta.hasValue(R.styleable.CustomTabLayout_tabSelectedTextColor)) {
+                        selected = tabColorStateList?.getColorForState(View.SELECTED_STATE_SET, selected) ?: selected
+                        selected = ta.getColor(R.styleable.CustomTabLayout_tabSelectedTextColor, selected)
+                    }
+
+                    var disableColor = defaultDisableColor
+                    if (ta.hasValue(R.styleable.CustomTabLayout_tabDisableTextColor)) {
+                        disableColor = tabColorStateList?.getColorForState(intArrayOf(-android.R.attr.state_enabled), disableColor) ?: disableColor
+                        disableColor = ta.getColor(R.styleable.CustomTabLayout_tabDisableTextColor, disableColor)
+                    }
+                    tabColorStateList = createColorStateList(tabColorStateList?.defaultColor
+                            ?: Color.BLACK, selected, disableColor)
                 }
+
+
                 if (ta.hasValue(R.styleable.CustomTabLayout_mtabBackground)) {
                     tabBackgroundResId = ta.getResourceId(R.styleable.CustomTabLayout_mtabBackground, 0)
                 }
@@ -136,7 +154,6 @@ class CustomTabLayout @JvmOverloads constructor(
         }
     }
 
-    //TODO tab不能减少，偏移量，点击事件需要考虑，重新计算
     fun setDisable(index: Int) {
         disableSet.add(index)
         delegeteAdater?.notifyDataSetChanged()
@@ -149,19 +166,24 @@ class CustomTabLayout @JvmOverloads constructor(
         delegeteAdater = DelegatePagerAdapter(adapter, disableSet)
         vp.adapter = delegeteAdater
         viewPager?.addOnPageChangeListener(pagListener)
+        tabsContainer.removeAllViews()
+        for (i in 0 until getTabCount()) {
+            addTextTab(i, sourceAdapter?.getPageTitle(i))
+        }
         notifyDataSetChanged()
+
     }
 
 
     private fun notifyDataSetChanged() {
         //刷新界面
-        tabsContainer.removeAllViews()
-        for (i in 0 until getTabCount()) {
-            addTextTab(i, delegeteAdater?.getPageTitle(i))
-        }
-
         //更新tab的style
         updateTabStyles()
+
+        for (i in 0 until getTabCount()) {
+            tabsContainer.getChildAt(i).isEnabled = !disableSet.contains(i)
+        }
+
 
         viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
@@ -170,14 +192,13 @@ class CustomTabLayout @JvmOverloads constructor(
                 } else {
                     viewTreeObserver.removeGlobalOnLayoutListener(this)
                 }
-                currentPosition = viewPager?.currentItem ?: 0
+                currentPosition = delegeteAdater?.realPosition(viewPager?.currentItem ?: 0) ?: 0
                 val child = tabsContainer.getChildAt(currentPosition)
                 child?.let {
                     child.isSelected = true
                     scrollToChild(currentPosition, 0)
                 }
             }
-
         })
     }
 
@@ -212,12 +233,15 @@ class CustomTabLayout @JvmOverloads constructor(
         }
 
         if (currentPositionOffset > 0 && currentPosition < getTabCount() - 1) {
-            val nextTab = tabsContainer.getChildAt(currentPosition + 1)
-            val nextLineOffset = getLineOffset(nextTab)
-            val nextLineLeft = nextTab.left + left + lineOffset
-            val nextLineRight = nextTab.right + left - lineOffset
-            lineLeft = (currentPositionOffset * nextLineLeft + (1f - currentPositionOffset) * lineLeft)
-            lineRight = (currentPositionOffset * nextLineRight + (1f - currentPositionOffset) * lineRight)
+            val nextPosition = getNextEnablePosition(currentPosition)
+            if (nextPosition != -1) {
+                val nextTab = tabsContainer.getChildAt(nextPosition)
+                val nextLineOffset = getLineOffset(nextTab)
+                val nextLineLeft = nextTab.left + left + nextLineOffset
+                val nextLineRight = nextTab.right + left - nextLineOffset
+                lineLeft = (currentPositionOffset * nextLineLeft + (1f - currentPositionOffset) * lineLeft)
+                lineRight = (currentPositionOffset * nextLineRight + (1f - currentPositionOffset) * lineRight)
+            }
         }
         canvas?.drawPath(Path().apply {
             val hih = indicatorHeight / 2
@@ -232,8 +256,18 @@ class CustomTabLayout @JvmOverloads constructor(
         }, indicatorPaint)
     }
 
+    private fun getNextEnablePosition(position: Int): Int {
+        var mposition = position
+        while (position < getTabCount()) {
+            if (tabsContainer.getChildAt(++mposition).isEnabled) {
+                return mposition
+            }
+        }
+        return -1
+    }
+
     private fun getLineOffset(currentView: View): Float {
-        //TODO
+
         if (indicatorWidth != 0) {
             return (currentView.measuredWidth - indicatorWidth) / 2f
         } else {
@@ -273,7 +307,7 @@ class CustomTabLayout @JvmOverloads constructor(
 
 
     private fun getTabCount(): Int {
-        return delegeteAdater?.count ?: 0
+        return sourceAdapter?.count ?: 0
     }
 
     private fun scrollToChild(position: Int, offset: Int) {
@@ -294,10 +328,14 @@ class CustomTabLayout @JvmOverloads constructor(
 
     }
 
-    private fun createColorStateList(defaultColor: Int, selectedColor: Int): ColorStateList {
-        val states = arrayOfNulls<IntArray>(2)
-        val colors = IntArray(2)
+    private fun createColorStateList(defaultColor: Int, selectedColor: Int, disableColor: Int): ColorStateList {
+        val states = arrayOfNulls<IntArray>(3)
+        val colors = IntArray(3)
         var i = 0
+
+        states[i] = intArrayOf(-android.R.attr.state_enabled)
+        colors[i] = disableColor
+        i++
 
         states[i] = View.SELECTED_STATE_SET
         colors[i] = selectedColor
@@ -306,7 +344,7 @@ class CustomTabLayout @JvmOverloads constructor(
         // Default enabled state
         states[i] = View.EMPTY_STATE_SET
         colors[i] = defaultColor
-        i++
+//        i++
 
         return ColorStateList(states, colors)
     }
@@ -321,39 +359,45 @@ class CustomTabLayout @JvmOverloads constructor(
         }
 
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-            Log.d("vp", "onPageScrolled $position | $positionOffset | $positionOffsetPixels")
-            if (position >= tabsContainer.childCount) {
+            val realPosition: Int = delegeteAdater!!.realPosition(position)
+            if (realPosition >= tabsContainer.childCount) {
                 return
             }
-            currentPosition = position
+
+            currentPosition = realPosition
             currentPositionOffset = positionOffset
 
-            val child = tabsContainer.getChildAt(position)
+            val child = tabsContainer.getChildAt(realPosition)
             var offset = 0
             if (child != null) {
                 offset = (positionOffset * child.width).toInt()
             }
-            scrollToChild(position, offset)
+            scrollToChild(realPosition, offset)
 
             invalidate()
         }
 
         override fun onPageSelected(position: Int) {
             Log.d("vp", "onPageSelected $position")
-            if (position >= tabsContainer.childCount) {
+            val realPosition: Int = delegeteAdater!!.realPosition(position)
+            if (realPosition >= tabsContainer.childCount) {
 
             }
             for (i in 0 until tabsContainer.childCount) {
-                tabsContainer.getChildAt(i).isSelected = position == i
+                tabsContainer.getChildAt(i).isSelected = realPosition == i
             }
         }
     }
 
     val mTabClick: OnClickListener = OnClickListener { v ->
-        var position: Int = v?.getTag() as Int ?: 0
+        val position: Int = v?.getTag() as? Int ?: 0
+        val vpPosition: Int = delegeteAdater!!.vpPosition(position)
+        if (vpPosition==-1){
+            return@OnClickListener
+        }
         val current = viewPager?.currentItem
-        if (current != position) {
-            viewPager?.setCurrentItem(position, true)
+        if (current != vpPosition) {
+            viewPager?.setCurrentItem(vpPosition, true)
         }
     }
 
@@ -379,15 +423,32 @@ class CustomTabLayout @JvmOverloads constructor(
             return result
         }
 
+        //TODO 算法希望优化
         fun realPosition(position: Int): Int {
-            //小转大
+            //vp的position转真实的position
             var result = position
-            for (i in 0..position) {
-                if (disableSet.contains(i)) {
+            for (i in 0 until pa.count) {
+                if (disableSet.contains(i)&& result>=i) {
                     result++
                 }
             }
             return Math.min(pa.count - 1, result)
+        }
+
+        //-1表示已经被禁用
+        //todo 算法希望优化
+        fun vpPosition(position: Int): Int {
+            if (disableSet.contains(position)){
+                return -1
+            }
+            //真实的position转vp position
+            var result = position
+            for (i in 0..position) {
+                if (disableSet.contains(i)) {
+                    result--
+                }
+            }
+            return Math.max(0, result)
         }
 
         override fun getPageTitle(position: Int): CharSequence? {

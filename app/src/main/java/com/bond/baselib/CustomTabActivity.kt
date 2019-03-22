@@ -27,9 +27,10 @@ class CustomTabActivity : AppCompatActivity() {
         setContentView(R.layout.activity_custom_tab)
         customTab = findViewById(R.id.customTab)
         viewPager = findViewById(R.id.viewpager)
-        pagerAdapter = MyPagerAdapter(3)
+        pagerAdapter = MyPagerAdapter(5)
         customTab.setupWithViewPagerAdapter(viewpager,pagerAdapter)
         customTab.setDisable(0)
+        customTab.setDisable(1)
     }
 
      inner class MyPagerAdapter (size:Int):PagerAdapter(){
