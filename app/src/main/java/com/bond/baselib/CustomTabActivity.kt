@@ -10,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 
-import com.bond.baseui.widget.CustomTabLayout
+import com.bond.baseui.widget.DisableTabLayout
 import kotlinx.android.synthetic.main.activity_custom_tab.*
 
 /**
@@ -19,7 +19,7 @@ import kotlinx.android.synthetic.main.activity_custom_tab.*
  * @email zdf312192599@163.com
  */
 class CustomTabActivity : AppCompatActivity() {
-     lateinit var customTab: CustomTabLayout
+     lateinit var customTab: DisableTabLayout
      lateinit var viewPager: ViewPager
      lateinit var pagerAdapter: PagerAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +31,7 @@ class CustomTabActivity : AppCompatActivity() {
         customTab.setupWithViewPagerAdapter(viewpager,pagerAdapter)
         customTab.setDisable(0)
         customTab.setDisable(1)
+        customTab.setEnable(0)
     }
 
      inner class MyPagerAdapter (size:Int):PagerAdapter(){

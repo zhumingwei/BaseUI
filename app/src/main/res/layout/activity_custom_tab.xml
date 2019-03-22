@@ -5,20 +5,20 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.bond.baseui.widget.CustomTabLayout
+    <com.bond.baseui.widget.DisableTabLayout
         android:id="@+id/customTab"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        app:mtabBackground="#ff0000"
-        app:mtabMode="fixed"
-        app:tabIndicatorColor="#00ff00"
-        app:tabIndicatorHeight="4dp"
-        app:tabIndicatorWidth="40dp"
-        app:tabSelectedTextColor="#00ff00"
-        app:tabTextAppearance="@style/BuyEpisode"
-        app:tabTextColor="#0000ff">
+        app:disable_tabBackground="#ff0000"
+        app:disable_tabMode="fixed"
+        app:disable_tabIndicatorColor="#00ff00"
+        app:disable_tabIndicatorHeight="4dp"
+        app:disable_tabIndicatorWidth="40dp"
+        app:disable_tabSelectedTextColor="#00ff00"
+        app:disable_tabTextAppearance="@style/BuyEpisode"
+        app:disable_tabTextColor="#0000ff">
 
-    </com.bond.baseui.widget.CustomTabLayout>
+    </com.bond.baseui.widget.DisableTabLayout>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/viewpager"

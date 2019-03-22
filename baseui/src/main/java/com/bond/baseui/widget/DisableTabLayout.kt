@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.os.Build
+import android.support.annotation.ColorRes
 import android.support.annotation.IntDef
 import android.support.annotation.RestrictTo
+import android.support.v4.content.ContextCompat
 import android.support.v4.view.PagerAdapter
 import android.support.v4.view.ViewCompat
 import android.support.v4.view.ViewPager
@@ -36,7 +38,7 @@ import java.lang.annotation.RetentionPolicy
  * 添加hook添加自定义tab
  *
  */
-class CustomTabLayout @JvmOverloads constructor(
+class DisableTabLayout @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : HorizontalScrollView(context, attrs, defStyleAttr) {
     var viewPager: ViewPager? = null
@@ -66,7 +68,6 @@ class CustomTabLayout @JvmOverloads constructor(
 
     private var currentPosition = 0
     private var currentPositionOffset: Float = 0f
-    //    var shouldExpand = true//是否展开tab
     var mode: Int = MODE_FIXED
     val disableSet: MutableSet<Int> = mutableSetOf()
     val scrollOffset = 52
@@ -85,11 +86,8 @@ class CustomTabLayout @JvmOverloads constructor(
             tabsContainer.clipChildren = false
             tabsContainer.gravity = Gravity.CENTER
             addView(tabsContainer)
-//            tabDefaultWidth = dp2px(40f).toInt()
-//            indicatorWidth = dp2px(30f).toInt()
-
-            val ta = context.obtainStyledAttributes(attrs, R.styleable.CustomTabLayout)
-            val taa = context.obtainStyledAttributes(ta.getResourceId(R.styleable.CustomTabLayout_tabTextAppearance, android.support.design.R.style.TextAppearance_Design_Tab),
+            val ta = context.obtainStyledAttributes(attrs, R.styleable.DisableTabLayout)
+            val taa = context.obtainStyledAttributes(ta.getResourceId(R.styleable.DisableTabLayout_disable_tabTextAppearance, android.support.design.R.style.TextAppearance_Design_Tab),
                     android.support.v7.appcompat.R.styleable.TextAppearance)
             try {
                 tabTextSize = taa.getDimensionPixelSize(android.support.v7.appcompat.R.styleable.TextAppearance_android_textSize, 0)
@@ -102,49 +100,49 @@ class CustomTabLayout @JvmOverloads constructor(
                 taa.recycle()
             }
             try {
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabTextColor)) {
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabTextColor)) {
                     // If we have an explicit text color set, use it instead
-                    tabColorStateList = ta.getColorStateList(R.styleable.CustomTabLayout_tabTextColor)
+                    tabColorStateList = ta.getColorStateList(R.styleable.DisableTabLayout_disable_tabTextColor)
                 }
 
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabSelectedTextColor) || ta.hasValue(R.styleable.CustomTabLayout_tabDisableTextColor)) {
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabSelectedTextColor) || ta.hasValue(R.styleable.DisableTabLayout_disable_tabDisableTextColor)) {
                     var selected = 0
-                    if (ta.hasValue(R.styleable.CustomTabLayout_tabSelectedTextColor)) {
+                    if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabSelectedTextColor)) {
                         selected = tabColorStateList?.getColorForState(View.SELECTED_STATE_SET, selected) ?: selected
-                        selected = ta.getColor(R.styleable.CustomTabLayout_tabSelectedTextColor, selected)
+                        selected = ta.getColor(R.styleable.DisableTabLayout_disable_tabSelectedTextColor, selected)
                     }
 
                     var disableColor = defaultDisableColor
-                    if (ta.hasValue(R.styleable.CustomTabLayout_tabDisableTextColor)) {
+                    if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabDisableTextColor)) {
                         disableColor = tabColorStateList?.getColorForState(intArrayOf(-android.R.attr.state_enabled), disableColor) ?: disableColor
-                        disableColor = ta.getColor(R.styleable.CustomTabLayout_tabDisableTextColor, disableColor)
+                        disableColor = ta.getColor(R.styleable.DisableTabLayout_disable_tabDisableTextColor, disableColor)
                     }
                     tabColorStateList = createColorStateList(tabColorStateList?.defaultColor
                             ?: Color.BLACK, selected, disableColor)
                 }
 
 
-                if (ta.hasValue(R.styleable.CustomTabLayout_mtabBackground)) {
-                    tabBackgroundResId = ta.getResourceId(R.styleable.CustomTabLayout_mtabBackground, 0)
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabBackground)) {
+                    tabBackgroundResId = ta.getResourceId(R.styleable.DisableTabLayout_disable_tabBackground, 0)
                 }
 //                控件宽度，需要等宽的时候用到
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabDefaultWidth)) {
-                    tabDefaultWidth = ta.getDimensionPixelSize(R.styleable.CustomTabLayout_tabDefaultWidth, 0)
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabDefaultWidth)) {
+                    tabDefaultWidth = ta.getDimensionPixelSize(R.styleable.DisableTabLayout_disable_tabDefaultWidth, 0)
                 }
 
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabIndicatorHeight)) {
-                    indicatorHeight = ta.getDimensionPixelSize(R.styleable.CustomTabLayout_tabIndicatorHeight, 8)
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabIndicatorHeight)) {
+                    indicatorHeight = ta.getDimensionPixelSize(R.styleable.DisableTabLayout_disable_tabIndicatorHeight, 8)
                 }
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabIndicatorWidth)) {
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabIndicatorWidth)) {
                     //默认是控件宽度，如果有则使用设置宽度
-                    indicatorWidth = ta.getDimensionPixelSize(R.styleable.CustomTabLayout_tabIndicatorWidth, 0)
+                    indicatorWidth = ta.getDimensionPixelSize(R.styleable.DisableTabLayout_disable_tabIndicatorWidth, 0)
                 }
-                if (ta.hasValue(R.styleable.CustomTabLayout_tabIndicatorColor)) {
-                    val indicatorColor = ta.getColor(R.styleable.CustomTabLayout_tabIndicatorColor, Color.BLACK)
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabIndicatorColor)) {
+                    val indicatorColor = ta.getColor(R.styleable.DisableTabLayout_disable_tabIndicatorColor, Color.BLACK)
                     indicatorPaint.color = indicatorColor
                 }
-                if (ta.hasValue(R.styleable.CustomTabLayout_mtabMode)) {
-                    mode = ta.getInt(R.styleable.CustomTabLayout_mtabMode, MODE_FIXED)
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabMode)) {
+                    mode = ta.getInt(R.styleable.DisableTabLayout_disable_tabMode, MODE_FIXED)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -154,26 +152,23 @@ class CustomTabLayout @JvmOverloads constructor(
         }
     }
 
-    fun setDisable(index: Int) {
-        disableSet.add(index)
-        delegeteAdater?.notifyDataSetChanged()
-        notifyDataSetChanged()
-    }
-
     fun setupWithViewPagerAdapter(vp: ViewPager, adapter: PagerAdapter) {
         this.viewPager = vp
         this.sourceAdapter = adapter
         delegeteAdater = DelegatePagerAdapter(adapter, disableSet)
         vp.adapter = delegeteAdater
         viewPager?.addOnPageChangeListener(pagListener)
-        tabsContainer.removeAllViews()
-        for (i in 0 until getTabCount()) {
-            addTextTab(i, sourceAdapter?.getPageTitle(i))
-        }
+        resetView()
         notifyDataSetChanged()
 
     }
 
+    private fun resetView(){
+        tabsContainer.removeAllViews()
+        for (i in 0 until getTabCount()) {
+            addTextTab(i, sourceAdapter?.getPageTitle(i))
+        }
+    }
 
     private fun notifyDataSetChanged() {
         //刷新界面
@@ -187,7 +182,7 @@ class CustomTabLayout @JvmOverloads constructor(
 
         viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                     viewTreeObserver.removeOnGlobalLayoutListener(this)
                 } else {
                     viewTreeObserver.removeGlobalOnLayoutListener(this)
@@ -392,7 +387,7 @@ class CustomTabLayout @JvmOverloads constructor(
     val mTabClick: OnClickListener = OnClickListener { v ->
         val position: Int = v?.getTag() as? Int ?: 0
         val vpPosition: Int = delegeteAdater!!.vpPosition(position)
-        if (vpPosition==-1){
+        if (vpPosition == -1) {
             return@OnClickListener
         }
         val current = viewPager?.currentItem
@@ -428,7 +423,7 @@ class CustomTabLayout @JvmOverloads constructor(
             //vp的position转真实的position
             var result = position
             for (i in 0 until pa.count) {
-                if (disableSet.contains(i)&& result>=i) {
+                if (disableSet.contains(i) && result >= i) {
                     result++
                 }
             }
@@ -438,7 +433,7 @@ class CustomTabLayout @JvmOverloads constructor(
         //-1表示已经被禁用
         //todo 算法希望优化
         fun vpPosition(position: Int): Int {
-            if (disableSet.contains(position)){
+            if (disableSet.contains(position)) {
                 return -1
             }
             //真实的position转vp position
@@ -475,6 +470,59 @@ class CustomTabLayout @JvmOverloads constructor(
     @IntDef(value = intArrayOf(MODE_SCROLLABLE, MODE_FIXED))
     @Retention(RetentionPolicy.SOURCE)
     annotation class Mode
+
+
+    //    ============= 工具方法
+    fun setCurrentItem(position: Int) {
+        val position = delegeteAdater!!.vpPosition(position)
+        if (position>=0){
+            viewPager?.setCurrentItem(position)
+        }
+
+    }
+
+
+    fun setEnable(index: Int, enable: Boolean) {
+        if (enable) {
+            setEnable(index)
+        } else {
+            setDisable(index)
+        }
+    }
+
+    fun setDisable(index: Int) {
+        disableSet.add(index)
+        delegeteAdater?.notifyDataSetChanged()
+        notifyDataSetChanged()
+    }
+
+    fun setEnable(index: Int) {
+        disableSet.remove(index)
+        delegeteAdater?.notifyDataSetChanged()
+        notifyDataSetChanged()
+    }
+
+    fun setIndicatorColor(@ColorRes colorRes:Int){
+        indicatorPaint.color = ContextCompat.getColor(context,colorRes)
+        invalidate()
+    }
+
+    fun setTabMode(mode:Int){
+        this.mode = mode
+        resetView()
+        notifyDataSetChanged()
+    }
+
+    fun setTextColor(defaultColor:Int,selectedColor:Int,disableColor:Int){
+        tabColorStateList = createColorStateList(defaultColor,selectedColor,disableColor)
+        for (i in 0 until tabsContainer.childCount){
+            (tabsContainer.getChildAt(i) as? TextView)?.setTextColor(tabColorStateList)
+        }
+    }
+
+    fun getCurrentRealPosition():Int{
+        return delegeteAdater!!.realPosition(viewPager!!.currentItem)
+    }
 }
 
 const val MODE_SCROLLABLE = 0

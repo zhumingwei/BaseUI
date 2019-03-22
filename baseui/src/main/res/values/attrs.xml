@@ -17,17 +17,17 @@
         <attr name="base_title" format="string|reference"></attr>
     </declare-styleable>
 
-    <declare-styleable name="CustomTabLayout">
-        <attr name="tabTextAppearance" format="reference"></attr>
-        <attr name="tabSelectedTextColor" format="color|reference"></attr>
-        <attr name="tabDisableTextColor" format="color|reference"></attr>
-        <attr name="tabTextColor" format="color|reference"></attr>
-        <attr name="mtabBackground" format="color|reference"></attr>
-        <attr name="tabIndicatorColor" format="color|reference"></attr>
-        <attr name="tabIndicatorHeight" format="dimension"></attr>
-        <attr name="tabIndicatorWidth" format="dimension"></attr>
-        <attr name="tabDefaultWidth" format="dimension"></attr>
-        <attr name="mtabMode" >
+    <declare-styleable name="DisableTabLayout">
+        <attr name="disable_tabTextAppearance" format="reference"></attr>
+        <attr name="disable_tabSelectedTextColor" format="color|reference"></attr>
+        <attr name="disable_tabDisableTextColor" format="color|reference"></attr>
+        <attr name="disable_tabTextColor" format="color|reference"></attr>
+        <attr name="disable_tabBackground" format="color|reference"></attr>
+        <attr name="disable_tabIndicatorColor" format="color|reference"></attr>
+        <attr name="disable_tabIndicatorHeight" format="dimension"></attr>
+        <attr name="disable_tabIndicatorWidth" format="dimension"></attr>
+        <attr name="disable_tabDefaultWidth" format="dimension"></attr>
+        <attr name="disable_tabMode" >
             <enum name="scrollable" value="0"/>
             <enum name="fixed" value="1"/>
         </attr>
