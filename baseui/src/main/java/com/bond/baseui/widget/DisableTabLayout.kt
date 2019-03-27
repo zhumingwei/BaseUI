@@ -45,7 +45,7 @@ class DisableTabLayout @JvmOverloads constructor(
     var delegeteAdater: DelegatePagerAdapter? = null
     var sourceAdapter: PagerAdapter? = null
     lateinit var tabsContainer: LinearLayout
-
+    private var mSelectedListeners = mutableListOf<OnTabSelectedListener>()
 
     var indicatorHeight: Int = 8
     //indicatorWidth为0
@@ -163,7 +163,7 @@ class DisableTabLayout @JvmOverloads constructor(
 
     }
 
-    private fun resetView(){
+    private fun resetView() {
         tabsContainer.removeAllViews()
         for (i in 0 until getTabCount()) {
             addTextTab(i, sourceAdapter?.getPageTitle(i))
@@ -187,7 +187,8 @@ class DisableTabLayout @JvmOverloads constructor(
                 } else {
                     viewTreeObserver.removeGlobalOnLayoutListener(this)
                 }
-                currentPosition = delegeteAdater?.realPosition(viewPager?.currentItem ?: 0) ?: 0
+                setCurrentPosition(delegeteAdater?.realPosition(viewPager?.currentItem ?: 0) ?: 0)
+                dispatchSelected(currentPosition)
                 val child = tabsContainer.getChildAt(currentPosition)
                 child?.let {
                     child.isSelected = true
@@ -195,6 +196,10 @@ class DisableTabLayout @JvmOverloads constructor(
                 }
             }
         })
+    }
+
+    private fun setCurrentPosition(index: Int) {
+        currentPosition = index
     }
 
     //背景颜色，字体大小，默认字体颜色
@@ -359,7 +364,7 @@ class DisableTabLayout @JvmOverloads constructor(
                 return
             }
 
-            currentPosition = realPosition
+            setCurrentPosition(realPosition)
             currentPositionOffset = positionOffset
 
             val child = tabsContainer.getChildAt(realPosition)
@@ -381,6 +386,7 @@ class DisableTabLayout @JvmOverloads constructor(
             for (i in 0 until tabsContainer.childCount) {
                 tabsContainer.getChildAt(i).isSelected = realPosition == i
             }
+            dispatchSelected(realPosition)
         }
     }
 
@@ -475,7 +481,7 @@ class DisableTabLayout @JvmOverloads constructor(
     //    ============= 工具方法
     fun setCurrentItem(position: Int) {
         val position = delegeteAdater!!.vpPosition(position)
-        if (position>=0){
+        if (position >= 0) {
             viewPager?.setCurrentItem(position)
         }
 
@@ -502,27 +508,67 @@ class DisableTabLayout @JvmOverloads constructor(
         notifyDataSetChanged()
     }
 
-    fun setIndicatorColor(@ColorRes colorRes:Int){
-        indicatorPaint.color = ContextCompat.getColor(context,colorRes)
+    fun setIndicatorColor(@ColorRes colorRes: Int) {
+        indicatorPaint.color = ContextCompat.getColor(context, colorRes)
         invalidate()
     }
 
-    fun setTabMode(mode:Int){
+    fun setTabMode(mode: Int) {
         this.mode = mode
         resetView()
         notifyDataSetChanged()
     }
 
-    fun setTextColor(defaultColor:Int,selectedColor:Int,disableColor:Int){
-        tabColorStateList = createColorStateList(defaultColor,selectedColor,disableColor)
-        for (i in 0 until tabsContainer.childCount){
+    fun setTextColor(defaultColor: Int, selectedColor: Int, disableColor: Int) {
+        tabColorStateList = createColorStateList(defaultColor, selectedColor, disableColor)
+        for (i in 0 until tabsContainer.childCount) {
             (tabsContainer.getChildAt(i) as? TextView)?.setTextColor(tabColorStateList)
         }
     }
 
-    fun getCurrentRealPosition():Int{
+    fun getCurrentRealPosition(): Int {
         return delegeteAdater!!.realPosition(viewPager!!.currentItem)
     }
+
+    fun addOnTabSelectedListener(listener: OnTabSelectedListener) {
+        if (!this.mSelectedListeners.contains(listener)) {
+            mSelectedListeners.add(listener)
+        }
+    }
+
+    fun removeOnTabSelectedListener(listener: OnTabSelectedListener) {
+        this.mSelectedListeners.remove(listener)
+    }
+
+    fun clearOnTabSelectedListeners() {
+        this.mSelectedListeners.clear()
+    }
+
+    var curselect: Int = 0
+    private fun dispatchSelected(index: Int) {
+        if (curselect == index) {
+            mSelectedListeners.forEach { it.reselected(index) }
+        } else {
+            val tempCur = curselect;
+            curselect = index
+            mSelectedListeners.forEach {
+                it.unSelected(tempCur)
+            }
+
+            mSelectedListeners.forEach {
+                it.selected(index)
+            }
+
+        }
+    }
+
+
+    interface OnTabSelectedListener {
+        fun selected(index: Int)
+        fun unSelected(index: Int)
+        fun reselected(index: Int)
+    }
+
 }
 
 const val MODE_SCROLLABLE = 0
