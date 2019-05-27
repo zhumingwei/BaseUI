@@ -26,7 +26,9 @@
         <attr name="disable_tabIndicatorColor" format="color|reference"></attr>
         <attr name="disable_tabIndicatorHeight" format="dimension"></attr>
         <attr name="disable_tabIndicatorWidth" format="dimension"></attr>
+        <attr name="disable_tabMarginEnd" format="dimension" />
         <attr name="disable_tabDefaultWidth" format="dimension"></attr>
+        <attr name="disable_tabIndicatorDrawable" format="reference" />
         <attr name="disable_tabMode" >
             <enum name="scrollable" value="0"/>
             <enum name="fixed" value="1"/>

@@ -3,10 +3,15 @@ package com.bond.baseui.widget
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.*
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.support.annotation.ColorRes
 import android.support.annotation.IntDef
 import android.support.annotation.RestrictTo
+import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentManager
+import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.PagerAdapter
 import android.support.v4.view.ViewCompat
@@ -24,6 +29,7 @@ import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.bond.baseui.R
+import com.bond.baseui.color
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 
@@ -42,10 +48,10 @@ class DisableTabLayout @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : HorizontalScrollView(context, attrs, defStyleAttr) {
     var viewPager: ViewPager? = null
-    var delegeteAdater: DelegatePagerAdapter? = null
+    var delegeteAdater: BaseVpAdapter? = null
     var sourceAdapter: PagerAdapter? = null
     lateinit var tabsContainer: LinearLayout
-    private var mSelectedListeners = mutableListOf<OnTabSelectedListener>()
+
 
     var indicatorHeight: Int = 8
     //indicatorWidth为0
@@ -75,6 +81,9 @@ class DisableTabLayout @JvmOverloads constructor(
     val defaultDisableColor by lazy {
         Color.parseColor("#C0C0C0")
     }
+    var indicatorDrawable: Drawable? = null
+
+    var marginEnd: Int = 0
 
     init {
         if (!isInEditMode) {
@@ -108,13 +117,15 @@ class DisableTabLayout @JvmOverloads constructor(
                 if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabSelectedTextColor) || ta.hasValue(R.styleable.DisableTabLayout_disable_tabDisableTextColor)) {
                     var selected = 0
                     if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabSelectedTextColor)) {
-                        selected = tabColorStateList?.getColorForState(View.SELECTED_STATE_SET, selected) ?: selected
+                        selected = tabColorStateList?.getColorForState(View.SELECTED_STATE_SET, selected)
+                                ?: selected
                         selected = ta.getColor(R.styleable.DisableTabLayout_disable_tabSelectedTextColor, selected)
                     }
 
                     var disableColor = defaultDisableColor
                     if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabDisableTextColor)) {
-                        disableColor = tabColorStateList?.getColorForState(intArrayOf(-android.R.attr.state_enabled), disableColor) ?: disableColor
+                        disableColor = tabColorStateList?.getColorForState(intArrayOf(-android.R.attr.state_enabled), disableColor)
+                                ?: disableColor
                         disableColor = ta.getColor(R.styleable.DisableTabLayout_disable_tabDisableTextColor, disableColor)
                     }
                     tabColorStateList = createColorStateList(tabColorStateList?.defaultColor
@@ -144,6 +155,12 @@ class DisableTabLayout @JvmOverloads constructor(
                 if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabMode)) {
                     mode = ta.getInt(R.styleable.DisableTabLayout_disable_tabMode, MODE_FIXED)
                 }
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabIndicatorDrawable)) {
+                    indicatorDrawable = ta.getDrawable(R.styleable.DisableTabLayout_disable_tabIndicatorDrawable)
+                }
+                if (ta.hasValue(R.styleable.DisableTabLayout_disable_tabMarginEnd)) {
+                    marginEnd = ta.getDimensionPixelSize(R.styleable.DisableTabLayout_disable_tabMarginEnd, 0)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -152,15 +169,27 @@ class DisableTabLayout @JvmOverloads constructor(
         }
     }
 
+    var isFragmentModel: Boolean = false
     fun setupWithViewPagerAdapter(vp: ViewPager, adapter: PagerAdapter) {
+        isFragmentModel = false
         this.viewPager = vp
         this.sourceAdapter = adapter
         delegeteAdater = DelegatePagerAdapter(adapter, disableSet)
-        vp.adapter = delegeteAdater
+        vp.adapter = delegeteAdater as DelegatePagerAdapter
         viewPager?.addOnPageChangeListener(pagListener)
         resetView()
         notifyDataSetChanged()
+    }
 
+    fun setupWithViewFragmentAdapter(vp: ViewPager, adapter: FragmentPagerAdapter, fm: FragmentManager) {
+        isFragmentModel = true
+        this.viewPager = vp
+        this.sourceAdapter = adapter
+        delegeteAdater = DelegateFragmentPagerAdapter(adapter, disableSet, fm)
+        vp.adapter = delegeteAdater as DelegateFragmentPagerAdapter
+        viewPager?.addOnPageChangeListener(pagListener)
+        resetView()
+        notifyDataSetChanged()
     }
 
     private fun resetView() {
@@ -187,8 +216,7 @@ class DisableTabLayout @JvmOverloads constructor(
                 } else {
                     viewTreeObserver.removeGlobalOnLayoutListener(this)
                 }
-                setCurrentPosition(delegeteAdater?.realPosition(viewPager?.currentItem ?: 0) ?: 0)
-                dispatchSelected(currentPosition)
+                currentPosition = delegeteAdater?.realPosition(viewPager?.currentItem ?: 0) ?: 0
                 val child = tabsContainer.getChildAt(currentPosition)
                 child?.let {
                     child.isSelected = true
@@ -198,19 +226,25 @@ class DisableTabLayout @JvmOverloads constructor(
         })
     }
 
-    private fun setCurrentPosition(index: Int) {
-        currentPosition = index
-    }
-
     //背景颜色，字体大小，默认字体颜色
     private fun updateTabStyles() {
         for (i in 0 until getTabCount()) {
             val v = tabsContainer.getChildAt(i)
-            if (tabBackgroundResId != 0) {
-                ViewCompat.setBackground(
-                        this, AppCompatResources.getDrawable(context, tabBackgroundResId))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (isFragmentModel) {
+                    if (tabBackgroundResId != 0) {
+                        ViewCompat.setBackground(
+                                v, AppCompatResources.getDrawable(context, tabBackgroundResId))
+                    }
+                } else {
+                    ViewCompat.setBackground(v, RippleDrawable(ColorStateList.valueOf(Color.parseColor("#E7E7E7")), if (tabBackgroundResId == 0) null else AppCompatResources.getDrawable(context, tabBackgroundResId), null))
+                }
+            } else {
+                if (tabBackgroundResId != 0) {
+                    ViewCompat.setBackground(
+                            v, AppCompatResources.getDrawable(context, tabBackgroundResId))
+                }
             }
-
 
         }
 
@@ -225,8 +259,8 @@ class DisableTabLayout @JvmOverloads constructor(
 
         val currentView: View = tabsContainer.getChildAt(currentPosition)
         val lineOffset = getLineOffset(currentView)
-        var lineLeft = currentView.left + left + lineOffset
-        var lineRight = currentView.right + left - lineOffset
+        var lineLeft = currentView.left + tabsContainer.left + lineOffset
+        var lineRight = currentView.right + tabsContainer.left - lineOffset
 
         if (lineRight - lineLeft < indicatorWidth) {
             return
@@ -237,23 +271,31 @@ class DisableTabLayout @JvmOverloads constructor(
             if (nextPosition != -1) {
                 val nextTab = tabsContainer.getChildAt(nextPosition)
                 val nextLineOffset = getLineOffset(nextTab)
-                val nextLineLeft = nextTab.left + left + nextLineOffset
-                val nextLineRight = nextTab.right + left - nextLineOffset
+                val nextLineLeft = nextTab.left + tabsContainer.left + nextLineOffset
+                val nextLineRight = nextTab.right + tabsContainer.left - nextLineOffset
                 lineLeft = (currentPositionOffset * nextLineLeft + (1f - currentPositionOffset) * lineLeft)
                 lineRight = (currentPositionOffset * nextLineRight + (1f - currentPositionOffset) * lineRight)
             }
         }
-        canvas?.drawPath(Path().apply {
-            val hih = indicatorHeight / 2
-            val top = height - indicatorHeight.toFloat()
-            val bottom = height.toFloat()
-            moveTo(lineLeft + hih, top)
-            lineTo(lineRight - hih, top)
-            arcTo(RectF(lineRight - indicatorHeight, top, lineRight, bottom), 270f, 180f)
-            lineTo(lineLeft + hih, bottom)
-            arcTo(RectF(lineLeft, top, lineLeft + indicatorHeight, bottom), 90f, 180f)
-            close()
-        }, indicatorPaint)
+        if (indicatorDrawable != null) {
+            indicatorDrawable!!.apply {
+                setBounds(lineLeft.toInt(), (height - indicatorHeight.toFloat()).toInt(), lineRight.toInt(), height)
+            }.draw(canvas)
+        } else {
+            canvas?.drawPath(Path().apply {
+                val hih = indicatorHeight / 2
+                val top = height - indicatorHeight.toFloat()
+                val bottom = height.toFloat()
+                moveTo(lineLeft + hih, top)
+                lineTo(lineRight - hih, top)
+                arcTo(RectF(lineRight - indicatorHeight, top, lineRight, bottom), 270f, 180f)
+                lineTo(lineLeft + hih, bottom)
+                arcTo(RectF(lineLeft, top, lineLeft + indicatorHeight, bottom), 90f, 180f)
+                close()
+            }, indicatorPaint)
+        }
+
+
     }
 
     private fun getNextEnablePosition(position: Int): Int {
@@ -287,6 +329,13 @@ class DisableTabLayout @JvmOverloads constructor(
         tabsContainer.addView(tab, position, if (mode == MODE_FIXED) expandedTabLayoutParams else defaultTabLayoutParams.apply {
             if (tabDefaultWidth != 0) {
                 width = tabDefaultWidth
+            }
+            if (this@DisableTabLayout.marginEnd > 0) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    this.marginEnd = marginEnd
+                }else{
+                    setMargins(0,0,this@DisableTabLayout.marginEnd,0)
+                }
             }
 
         })
@@ -350,12 +399,12 @@ class DisableTabLayout @JvmOverloads constructor(
     }
 
 
-    val pagListener: ViewPager.OnPageChangeListener = object : ViewPager.OnPageChangeListener {
+    private val pagListener: ViewPager.OnPageChangeListener = object : ViewPager.OnPageChangeListener {
         override fun onPageScrollStateChanged(state: Int) {
-            Log.d("vp", "onPageScrollStateChanged $state")
-            if (state == ViewPager.SCROLL_STATE_IDLE) {
+//            if (state == ViewPager.SCROLL_STATE_IDLE) {
 //                scrollToChild(viewPager?.currentItem?:0, 0)
-            }
+//            }
+            customPageListener?.onPageScrollStateChanged(state)
         }
 
         override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
@@ -364,7 +413,7 @@ class DisableTabLayout @JvmOverloads constructor(
                 return
             }
 
-            setCurrentPosition(realPosition)
+            currentPosition = realPosition
             currentPositionOffset = positionOffset
 
             val child = tabsContainer.getChildAt(realPosition)
@@ -375,6 +424,7 @@ class DisableTabLayout @JvmOverloads constructor(
             scrollToChild(realPosition, offset)
 
             invalidate()
+            customPageListener?.onPageScrolled(realPosition,positionOffset,positionOffsetPixels)
         }
 
         override fun onPageSelected(position: Int) {
@@ -386,7 +436,7 @@ class DisableTabLayout @JvmOverloads constructor(
             for (i in 0 until tabsContainer.childCount) {
                 tabsContainer.getChildAt(i).isSelected = realPosition == i
             }
-            dispatchSelected(realPosition)
+            customPageListener?.onPageSelected(realPosition)
         }
     }
 
@@ -406,7 +456,67 @@ class DisableTabLayout @JvmOverloads constructor(
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpVal, resources.displayMetrics)
     }
 
-    class DelegatePagerAdapter(val pa: PagerAdapter, val disableSet: Set<Int>) : PagerAdapter() {
+    interface BaseVpAdapter {
+        fun realPosition(position: Int): Int
+        fun vpPosition(position: Int): Int
+
+    }
+
+    class DelegateFragmentPagerAdapter(val pa: FragmentPagerAdapter, val disableSet: Set<Int>, fm: FragmentManager) : FragmentPagerAdapter(fm), BaseVpAdapter {
+        override fun getItem(position: Int): Fragment {
+            return pa.getItem(realPosition(position))
+        }
+
+        override fun getCount(): Int {
+            return mCount()
+        }
+
+        override fun getPageTitle(position: Int): CharSequence? {
+            return pa.getPageTitle(realPosition(position))
+        }
+
+        fun mCount(): Int {
+            var result = pa.count
+            for (i in 0 until pa.count) {
+                if (disableSet.contains(i)) {
+                    result--
+                }
+            }
+            return result
+        }
+
+
+        //TODO 算法希望优化
+        override fun realPosition(position: Int): Int {
+            //vp的position转真实的position
+            var result = position
+            for (i in 0 until pa.count) {
+                if (disableSet.contains(i) && result >= i) {
+                    result++
+                }
+            }
+            return Math.min(pa.count - 1, result)
+        }
+
+        //-1表示已经被禁用
+        //todo 算法希望优化
+        override fun vpPosition(position: Int): Int {
+            if (disableSet.contains(position)) {
+                return -1
+            }
+            //真实的position转vp position
+            var result = position
+            for (i in 0..position) {
+                if (disableSet.contains(i)) {
+                    result--
+                }
+            }
+            return Math.max(0, result)
+        }
+
+    }
+
+    class DelegatePagerAdapter(val pa: PagerAdapter, val disableSet: Set<Int>) : PagerAdapter(), BaseVpAdapter {
 
         override fun isViewFromObject(view: View, `object`: Any): Boolean = pa.isViewFromObject(view, `object`)
 
@@ -425,7 +535,7 @@ class DisableTabLayout @JvmOverloads constructor(
         }
 
         //TODO 算法希望优化
-        fun realPosition(position: Int): Int {
+        override fun realPosition(position: Int): Int {
             //vp的position转真实的position
             var result = position
             for (i in 0 until pa.count) {
@@ -438,7 +548,7 @@ class DisableTabLayout @JvmOverloads constructor(
 
         //-1表示已经被禁用
         //todo 算法希望优化
-        fun vpPosition(position: Int): Int {
+        override fun vpPosition(position: Int): Int {
             if (disableSet.contains(position)) {
                 return -1
             }
@@ -471,18 +581,11 @@ class DisableTabLayout @JvmOverloads constructor(
 
     }
 
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @IntDef(value = intArrayOf(MODE_SCROLLABLE, MODE_FIXED))
-    @Retention(RetentionPolicy.SOURCE)
-    annotation class Mode
-
-
     //    ============= 工具方法
     fun setCurrentItem(position: Int) {
         val position = delegeteAdater!!.vpPosition(position)
         if (position >= 0) {
-            viewPager?.setCurrentItem(position)
+            viewPager?.currentItem = position
         }
 
     }
@@ -498,13 +601,13 @@ class DisableTabLayout @JvmOverloads constructor(
 
     fun setDisable(index: Int) {
         disableSet.add(index)
-        delegeteAdater?.notifyDataSetChanged()
+        (delegeteAdater as? PagerAdapter)?.notifyDataSetChanged()
         notifyDataSetChanged()
     }
 
     fun setEnable(index: Int) {
         disableSet.remove(index)
-        delegeteAdater?.notifyDataSetChanged()
+        (delegeteAdater as? PagerAdapter)?.notifyDataSetChanged()
         notifyDataSetChanged()
     }
 
@@ -527,48 +630,10 @@ class DisableTabLayout @JvmOverloads constructor(
     }
 
     fun getCurrentRealPosition(): Int {
-        return delegeteAdater!!.realPosition(viewPager!!.currentItem)
+        return delegeteAdater?.realPosition(viewPager!!.currentItem) ?: -1
     }
 
-    fun addOnTabSelectedListener(listener: OnTabSelectedListener) {
-        if (!this.mSelectedListeners.contains(listener)) {
-            mSelectedListeners.add(listener)
-        }
-    }
-
-    fun removeOnTabSelectedListener(listener: OnTabSelectedListener) {
-        this.mSelectedListeners.remove(listener)
-    }
-
-    fun clearOnTabSelectedListeners() {
-        this.mSelectedListeners.clear()
-    }
-
-    var curselect: Int = 0
-    private fun dispatchSelected(index: Int) {
-        if (curselect == index) {
-            mSelectedListeners.forEach { it.reselected(index) }
-        } else {
-            val tempCur = curselect;
-            curselect = index
-            mSelectedListeners.forEach {
-                it.unSelected(tempCur)
-            }
-
-            mSelectedListeners.forEach {
-                it.selected(index)
-            }
-
-        }
-    }
-
-
-    interface OnTabSelectedListener {
-        fun selected(index: Int)
-        fun unSelected(index: Int)
-        fun reselected(index: Int)
-    }
-
+    var customPageListener:ViewPager.OnPageChangeListener? = null
 }
 
 const val MODE_SCROLLABLE = 0
